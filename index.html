@@ -1,0 +1,2341 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Castro Familia - Kas Organisasi</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f1015;
+            --card-bg: #181a20;
+            --card-border: #262933;
+            --accent-green-bright: #00ff87;
+            --accent-green: #00b894;
+            --accent-blue: #0984e3;
+            --text-primary: #ffffff;
+            --text-secondary: #9ea3b0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-bottom: 80px;
+            overflow-x: hidden;
+        }
+
+        /* OVERLAY TRANSISI DARI 4 SUDUT LAYAR */
+        .page-transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 99999;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .corner-panel {
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            background: #14161d;
+            border: 1px solid var(--accent-green-bright);
+            will-change: transform;
+            transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 100000;
+        }
+
+        .panel-top-left { top: 0; left: 0; clip-path: polygon(0 0, 100% 0, 0 100%); transform: translate(-100%, -100%); }
+        .panel-top-right { top: 0; right: 0; clip-path: polygon(100% 0, 100% 0, 100% 100%); transform: translate(100%, -100%); }
+        .panel-bottom-right { bottom: 0; right: 0; clip-path: polygon(100% 0, 100% 100%, 0 100%); transform: translate(100%, 100%); }
+        .panel-bottom-left { bottom: 0; left: 0; clip-path: polygon(0 0, 100% 100%, 0 100%); transform: translate(-100%, 100%); }
+
+        .center-black-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 140px;
+            height: 140px;
+            background-color: #000000;
+            border-radius: 50%;
+            border: 2px solid var(--accent-green-bright);
+            box-shadow: 0 0 30px rgba(0, 255, 135, 0.6);
+            z-index: 100001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            will-change: transform, opacity;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+        }
+
+        .text-arch-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+        }
+
+        .arch-char {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--accent-green-bright);
+            opacity: 0;
+            text-shadow: 0 0 6px var(--accent-green-bright);
+            transition: opacity 0.12s ease-in;
+            line-height: 1;
+        }
+
+        .arch-char.visible { opacity: 1; }
+
+        .page-transition-overlay.active { pointer-events: all; }
+        .page-transition-overlay.active .corner-panel { transform: translate(0, 0); }
+        .page-transition-overlay.active .center-black-circle { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        /* MODAL OVERLAY GENERAL */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 99990;
+            display: grid;
+            place-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-container {
+            width: 100%;
+            max-width: 360px;
+            background: linear-gradient(135deg, #181a20, #0d0e12);
+            border: 2px solid var(--accent-green-bright);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 0 40px rgba(0, 255, 135, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transform: scale(0.2);
+            opacity: 0;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-container {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 10px;
+        }
+
+        .modal-header h4 {
+            color: var(--accent-green-bright);
+            font-size: 15px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px rgba(0, 255, 135, 0.5);
+        }
+
+        .btn-close-modal {
+            width: 100%;
+            background: #202430;
+            color: #fff;
+            border: 1px solid var(--card-border);
+            padding: 9px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .btn-close-modal:hover {
+            background: var(--accent-green-bright);
+            color: #000;
+        }
+
+        /* ID CARD STYLING */
+        .id-card-body {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .id-card-left {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 85px;
+        }
+
+        .id-card-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #101216;
+            border: 2px solid var(--accent-green-bright);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 0 12px rgba(0, 255, 135, 0.25);
+            margin-bottom: 8px;
+        }
+
+        .id-card-role-badge {
+            padding: 3px 10px;
+            background: var(--accent-green-bright);
+            color: #000;
+            font-size: 10px;
+            font-weight: 800;
+            border-radius: 12px;
+        }
+
+        .id-card-right {
+            flex: 1;
+            background-color: #101216;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .id-card-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+        }
+
+        .id-card-detail-row span { color: var(--text-secondary); font-size: 10px; }
+        .id-card-detail-row strong { color: #fff; font-size: 11px; }
+
+        /* Top Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--card-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar .brand {
+            font-weight: 800;
+            font-size: 18px;
+            color: var(--accent-green-bright);
+            letter-spacing: 1px;
+        }
+
+        .navbar .btn-logout {
+            background: #2a2d3d;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 15px;
+        }
+
+        .banner-card {
+            width: 100%;
+            height: 140px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #052b14, #0f1015);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            border: 1px solid var(--card-border);
+        }
+
+        .banner-card h2 {
+            color: var(--accent-green-bright);
+            letter-spacing: 2px;
+            font-size: 22px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(0, 255, 135, 0.5);
+        }
+
+        .balance-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #1e222d, #14161d);
+            border-left: 4px solid var(--accent-green-bright);
+        }
+
+        .balance-info p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .balance-info h3 {
+            font-size: 22px;
+            color: var(--accent-green-bright);
+            margin-top: 4px;
+            font-weight: 800;
+        }
+
+        /* 6 KOTAK INFO INTERAKTIF */
+        .info-grid-6 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .info-box-item {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .info-box-item:hover, .info-box-item:active {
+            border-color: var(--accent-green-bright);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 255, 135, 0.15);
+        }
+
+        .info-box-item .icon {
+            font-size: 16px;
+            color: var(--accent-green-bright);
+            margin-bottom: 4px;
+        }
+
+        .info-box-item span {
+            font-size: 9px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 2px;
+            font-weight: 700;
+        }
+
+        .info-box-item strong {
+            font-size: 12px;
+            color: var(--text-primary);
+            display: block;
+            word-break: break-word;
+        }
+
+        /* FULLSCREEN GAME MODE CONTAINER */
+        #gameArenaContainer.fullscreen-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--bg-color);
+            z-index: 99900;
+            overflow-y: auto;
+            padding: 20px 15px 40px 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .floating-exit-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #e63946;
+            color: #fff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(230, 57, 70, 0.5);
+            z-index: 99910;
+        }
+
+        /* STYLING CHAT DENGAN BACKGROUND .PINTEREST .JPG */
+        .chat-container-card {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 180px);
+            min-height: 480px;
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            background: linear-gradient(rgba(15, 16, 21, 0.85), rgba(15, 16, 21, 0.85)), 
+                        url('https://i.pinimg.com/736x/83/f5/57/83f5575da5cc57fc528ae45bda325029.jpg') center/cover no-repeat;
+        }
+
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-empty-state {
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .chat-empty-icon {
+            width: 50px;
+            height: 50px;
+            background-color: #202430;
+            border: 2px solid var(--accent-green-bright);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 12px;
+            box-shadow: 0 0 15px rgba(0, 255, 135, 0.3);
+        }
+
+        .chat-empty-state h5 {
+            font-size: 13px;
+            color: #ffffff;
+            letter-spacing: 1px;
+            font-weight: 800;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .chat-empty-state p {
+            font-size: 10px;
+            color: var(--text-secondary);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 12px; }
+        .chat-me { align-self: flex-end; background: var(--accent-green-bright); color: #000; font-weight: 600; }
+        .chat-other { align-self: flex-start; background: #202430; color: #fff; }
+
+        .chat-input-bar {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: #181a20;
+            border-top: 1px solid var(--card-border);
+        }
+
+        /* STYLING ELEMENTS GAME & KALKULATOR DAN BOTTOM NAV */
+        .ttt-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 300px;
+            margin: 15px auto;
+        }
+
+        .ttt-cell {
+            aspect-ratio: 1;
+            background: #101216;
+            border: 2px solid var(--card-border);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--accent-green-bright);
+        }
+
+        .rps-grid {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .btn-rps {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            background: #202430;
+            border: 2px solid var(--card-border);
+            font-size: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s;
+        }
+
+        .btn-rps:active { transform: scale(0.9); }
+
+        .clicker-btn {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-green-bright), var(--accent-green));
+            border: none;
+            color: #000;
+            font-size: 50px;
+            cursor: pointer;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(0, 255, 135, 0.5);
+            transition: transform 0.1s;
+        }
+
+        .clicker-btn:active { transform: scale(0.92); }
+
+        .chess-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            max-width: 340px;
+            margin: 15px auto;
+            border: 3px solid var(--accent-green-bright);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,255,135,0.2);
+        }
+
+        .chess-square {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .chess-square.light { background-color: #2e3440; }
+        .chess-square.dark { background-color: #14161d; }
+        .chess-square.selected { background-color: var(--accent-green-bright) !important; color: #000; }
+
+        .calc-display {
+            width: 100%;
+            height: 55px;
+            background-color: #101216;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--accent-green-bright);
+            font-size: 24px;
+            font-weight: bold;
+            text-align: right;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            outline: none;
+        }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .btn-calc {
+            background-color: #202430;
+            color: #fff;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-calc:active {
+            transform: scale(0.95);
+            background-color: var(--accent-green-bright);
+            color: #000;
+        }
+
+        .btn-calc-operator { background-color: #2980b9; color: #fff; }
+        .btn-calc-equal { background-color: var(--accent-green-bright); color: #000; grid-column: span 2; }
+        .btn-calc-clear { background-color: #e63946; color: #fff; }
+
+        .music-player-card {
+            text-align: center;
+            padding: 20px 15px;
+            background: #14161d;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            margin-bottom: 15px;
+        }
+
+        .vinyl-disc {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #00ff87 10%, #111 11%, #222 30%, #111 31%, #000 100%);
+            margin: 0 auto 15px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #222;
+            box-shadow: 0 0 15px rgba(0, 255, 135, 0.2);
+        }
+
+        .vinyl-disc.spinning { animation: spin 3s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .music-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .btn-play-circle {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--accent-green-bright);
+            color: #000;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-music-step {
+            background: #202430;
+            color: #fff;
+            border: 1px solid var(--card-border);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .music-progress-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        .music-progress-bar {
+            flex: 1;
+            height: 4px;
+            background: #202430;
+            border-radius: 2px;
+            outline: none;
+            accent-color: var(--accent-green-bright);
+        }
+
+        .quote-card {
+            background: #14161d;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .quote-arabic {
+            font-size: 16px;
+            color: #fff;
+            margin-bottom: 6px;
+            direction: rtl;
+        }
+
+        .quote-indo {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .special-menu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .special-menu-item {
+            background: #14161d;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .special-menu-item .icon {
+            font-size: 20px;
+            color: var(--accent-green-bright);
+            margin-bottom: 4px;
+        }
+
+        .special-menu-item h5 { font-size: 11px; color: #fff; margin-bottom: 2px; }
+        .special-menu-item p { font-size: 9px; color: var(--text-secondary); }
+
+        /* BOTTOM NAVIGATION BAR */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: #14161d;
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 20%;
+        }
+
+        .nav-item .icon { font-size: 18px; margin-bottom: 2px; }
+        .nav-item.active { color: var(--accent-green-bright); }
+
+        .menu-title {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .menu-item {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .menu-item:active {
+            transform: scale(0.98);
+            border-color: var(--accent-green-bright);
+        }
+
+        .menu-item .icon { font-size: 24px; margin-bottom: 8px; }
+        .menu-item h4 { font-size: 13px; color: var(--text-primary); }
+
+        .pay-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .btn-pay {
+            background: #202430;
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            padding: 12px 5px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-pay:hover { background: var(--accent-green-bright); color: #000; }
+
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background-color: #101216;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 13px;
+        }
+
+        .btn-action {
+            width: 100%;
+            background: var(--accent-green-bright);
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+        th, td { padding: 10px; border: 1px solid var(--card-border); text-align: center; }
+        th { background-color: #101216; color: var(--text-secondary); }
+
+        .badge { padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .badge-success { background: var(--accent-green-bright); color: #000; }
+
+        .btn-bug {
+            position: fixed;
+            bottom: 70px;
+            left: 20px;
+            background: #ffb703;
+            color: #000;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 11px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            cursor: pointer;
+            z-index: 99;
+        }
+
+        .view { display: none; }
+        .active { display: block !important; }
+    </style>
+</head>
+<body>
+
+    <!-- OVERLAY TRANSISI DARI 4 SUDUT LAYAR -->
+    <div class="page-transition-overlay" id="transitionOverlay">
+        <div class="corner-panel panel-top-left"></div>
+        <div class="corner-panel panel-top-right"></div>
+        <div class="corner-panel panel-bottom-right"></div>
+        <div class="corner-panel panel-bottom-left"></div>
+
+        <div class="center-black-circle">
+            <div class="text-arch-container" id="textArchContainer"></div>
+        </div>
+    </div>
+
+    <!-- MODAL POP-UP ID CARD MEMBER -->
+    <div class="modal-overlay" id="idCardModalOverlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h4>CASTRO FAMILIA</h4>
+                <p style="font-size: 9px; color: var(--text-secondary);">MEMBER CARD</p>
+            </div>
+            <div class="id-card-body">
+                <div class="id-card-left">
+                    <div class="id-card-avatar">👤</div>
+                    <div class="id-card-role-badge" id="cardMemberBadge">MEMBER</div>
+                </div>
+                <div class="id-card-right">
+                    <div class="id-card-detail-row">
+                        <span>NAMA:</span>
+                        <strong id="cardMemberName">Member 1</strong>
+                    </div>
+                    <div class="id-card-detail-row">
+                        <span>ID / HP:</span>
+                        <strong id="cardMemberPhone">0821...222</strong>
+                    </div>
+                    <div class="id-card-detail-row">
+                        <span>STATUS:</span>
+                        <strong style="color: var(--accent-green-bright);">LUNAS</strong>
+                    </div>
+                    <div class="id-card-detail-row">
+                        <span>ORGANISASI:</span>
+                        <strong>CASTRO</strong>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-close-modal" onclick="closeModal('idCardModalOverlay')">TUTUP ID CARD</button>
+        </div>
+    </div>
+
+    <!-- MODAL POP-UP DAFTAR TOTAL MEMBER -->
+    <div class="modal-overlay" id="membersModalOverlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h4>DAFTAR MEMBER</h4>
+                <p style="font-size: 9px; color: var(--text-secondary);" id="modalTotalMemberText">Total: 2 Member</p>
+            </div>
+            <div class="table-responsive" style="max-height: 220px;">
+                <table id="allMembersTable">
+                    <thead>
+                        <tr><th>Nama Member</th><th>Role</th><th>Nomor HP</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button class="btn-close-modal" onclick="closeModal('membersModalOverlay')">TUTUP</button>
+        </div>
+    </div>
+
+    <!-- MODAL POP-UP INFO ROLE -->
+    <div class="modal-overlay" id="roleModalOverlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h4>INFORMASI ROLE</h4>
+                <p style="font-size: 9px; color: var(--text-secondary);" id="modalRoleBadge">ADMIN</p>
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;" id="modalRoleDetail"></div>
+            <button class="btn-close-modal" onclick="closeModal('roleModalOverlay')">TUTUP</button>
+        </div>
+    </div>
+
+    <!-- MODAL POP-UP STREAK KAS -->
+    <div class="modal-overlay" id="streakModalOverlay">
+        <div class="modal-container" style="text-align: center;">
+            <div class="modal-header">
+                <h4>STREAK KAS AKTIF</h4>
+                <p style="font-size: 9px; color: var(--text-secondary);">REKOR KONSISTENSI</p>
+            </div>
+            <div style="padding: 15px 0;">
+                <h1 style="font-size: 42px; color: var(--accent-green-bright);" id="modalStreakDays">7 Hari 🔥</h1>
+                <p style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">Anda telah membayar kas berturut-turut tanpa terputus!</p>
+            </div>
+            <button class="btn-close-modal" onclick="closeModal('streakModalOverlay')">TUTUP</button>
+        </div>
+    </div>
+
+    <!-- MODAL POP-UP STATUS KAS -->
+    <div class="modal-overlay" id="kasStatusModalOverlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h4>STATUS KAS ANDA</h4>
+                <p style="font-size: 9px; color: var(--accent-green-bright);">LUNAS</p>
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6;" id="modalKasStatusDetail"></div>
+            <button class="btn-close-modal" onclick="closeModal('kasStatusModalOverlay')">TUTUP</button>
+        </div>
+    </div>
+
+    <!-- Top Navbar -->
+    <div class="navbar">
+        <div class="brand">CASTRO FAMILIA</div>
+        <button class="btn-logout" id="btnLogout" style="display:none;" onclick="logout()">Logout</button>
+    </div>
+
+    <!-- LOGIN VIEW -->
+    <div id="loginView" class="container view active" style="margin-top: 40px;">
+        <div class="card">
+            <h3 style="text-align: center; margin-bottom: 15px; color: var(--accent-green-bright);">MASUK AKUN</h3>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" placeholder="Masukkan username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="Masukkan password">
+            </div>
+            <button class="btn-action" onclick="handleLogin()">LOGIN</button>
+
+            <div style="margin-top: 20px; font-size: 11px; color: var(--text-secondary); text-align: center;">
+                <p><b>Daftar Akun Demo:</b></p>
+                <p>Admin 1: admin1 / admin123</p>
+                <p>Member 1: member1 / member123</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="dashboardView" class="container view">
+        <div class="banner-card">
+            <h2>CASTRO FAMILIA</h2>
+        </div>
+
+        <div class="card balance-card">
+            <div class="balance-info">
+                <p id="labelKasBalance">Kas Saya</p>
+                <h3 id="displayNetSaldo">$0</h3>
+            </div>
+            <span id="roleBadge" class="badge badge-success">MEMBER</span>
+        </div>
+
+        <!-- 6 KOTAK INFORMASI INTERAKTIF -->
+        <div class="info-grid-6">
+            <div class="info-box-item" onclick="showIdCard()" title="Klik untuk lihat ID Card">
+                <div class="icon">👤</div>
+                <span>LOGIN SEBAGAI</span>
+                <strong id="displayUsername">-</strong>
+            </div>
+            <div class="info-box-item" onclick="showIdCard()" title="Klik untuk lihat Nomor HP">
+                <div class="icon">📞</div>
+                <span>NOMOR HP / ID</span>
+                <strong id="displayPhone">0858...890</strong>
+            </div>
+            <div class="info-box-item" onclick="showRoleModal()" title="Klik untuk lihat Detail Role">
+                <div class="icon">🏷️</div>
+                <span>ROLE</span>
+                <strong id="displayRole">User</strong>
+            </div>
+            <div class="info-box-item" onclick="showTotalMembersModal()" title="Klik untuk lihat Daftar Member">
+                <div class="icon">👥</div>
+                <span>TOTAL MEMBER</span>
+                <strong id="displayTotalMember">2</strong>
+            </div>
+            <div class="info-box-item" onclick="showStreakModal()" title="Klik untuk lihat Rekor Streak">
+                <div class="icon">🔥</div>
+                <span>STREAK KAS</span>
+                <strong id="displayStreak" style="color: var(--accent-green-bright);">7 Hari</strong>
+            </div>
+            <div class="info-box-item" onclick="showKasStatusModal()" title="Klik untuk lihat Status Kas">
+                <div class="icon">🛍️</div>
+                <span>STATUS KAS</span>
+                <strong id="displayKasStatus" style="color: var(--accent-green-bright);">Lunas</strong>
+            </div>
+        </div>
+
+        <!-- Menu Utama Grid -->
+        <div class="menu-title">Menu Utama</div>
+        <div class="menu-grid" id="mainMenuGrid"></div>
+    </div>
+
+    <!-- HALAMAN MINI GAMES -->
+    <div id="miniGamesView" class="container view">
+        <div id="gameMenuGridContainer">
+            <div class="menu-title">Pilih Mini Game</div>
+            <div class="menu-grid">
+                <div class="menu-item" onclick="selectGame('clickerGame')">
+                    <div class="icon">👆</div>
+                    <h4>Idle Clicker</h4>
+                </div>
+                <div class="menu-item" onclick="selectGame('chessGame')">
+                    <div class="icon">♟️</div>
+                    <h4>Catur AI (Elo 800)</h4>
+                </div>
+                <div class="menu-item" onclick="selectGame('tttGame')">
+                    <div class="icon">❌</div>
+                    <h4>Tic Tac Toe vs AI</h4>
+                </div>
+                <div class="menu-item" onclick="selectGame('rpsGame')">
+                    <div class="icon">✂️</div>
+                    <h4>Gunting Batu</h4>
+                </div>
+                <div class="menu-item" onclick="selectGame('mathGame')">
+                    <div class="icon">🧮</div>
+                    <h4>Math Quiz</h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- ARENA BERMAIN GAME (FULL SCREEN MODE) -->
+        <div id="gameArenaContainer" style="display:none;">
+            <button class="floating-exit-btn" onclick="backToGameMenu()">✕ Keluar Game</button>
+            
+            <div id="clickerGame" class="game-box" style="display:none; width: 100%;">
+                <div class="card" style="text-align: center; margin-top: 35px;">
+                    <h3 style="color: var(--accent-green-bright);">CASTRO CLICKER</h3>
+                    <p style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Kumpulkan Poin Castro sebanyak-banyaknya!</p>
+                    <h1 id="clickerScore" style="font-size: 42px; color: #fff; margin: 15px 0;">0</h1>
+                    <button class="clicker-btn" onclick="handleClicker()">💎</button>
+                </div>
+
+                <div class="card">
+                    <h4 style="color: var(--accent-green-bright); margin-bottom: 10px;">🏆 LEADERBOARD POPULER</h4>
+                    <div class="table-responsive">
+                        <table id="leaderboardTable">
+                            <thead>
+                                <tr><th>Rank</th><th>Nama Member</th><th>Total Poin</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chessGame" class="game-box" style="display:none; width: 100%;">
+                <div class="card" style="text-align: center; margin-top: 35px;">
+                    <h3 style="color: var(--accent-green-bright); margin-bottom: 4px;">CATUR VS BOT (ELO 800)</h3>
+                    <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 10px;">Putih: Anda | Hitam: Castro AI</p>
+                    <div id="chessBoard" class="chess-grid"></div>
+                    <p id="chessStatus" style="font-size: 12px; color: var(--accent-green-bright); font-weight: bold; margin-bottom: 12px;">Giliran Putih (Anda)</p>
+                    <button class="btn-action" onclick="resetChessBoard()">Mulai Ulang Catur</button>
+                </div>
+            </div>
+
+            <div id="tttGame" class="game-box" style="display:none; width: 100%;">
+                <div class="card" style="text-align: center; margin-top: 35px;">
+                    <h3 style="color: var(--accent-green-bright); margin-bottom: 4px;">TIC TAC TOE VS AI</h3>
+                    <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 10px;">Anda (X) vs Bot AI (O)</p>
+                    <div class="ttt-board" id="tttBoard"></div>
+                    <p id="tttStatus" style="font-size: 13px; color: var(--accent-green-bright); font-weight: bold; margin-bottom: 12px;">Giliran Anda (X)</p>
+                    <button class="btn-action" onclick="resetTTT()">Main Lagi</button>
+                </div>
+            </div>
+
+            <div id="rpsGame" class="game-box" style="display:none; width: 100%;">
+                <div class="card" style="text-align: center; margin-top: 35px;">
+                    <h3 style="color: var(--accent-green-bright); margin-bottom: 5px;">GUNTING BATU KERTAS</h3>
+                    <p style="font-size: 11px; color: var(--text-secondary);">Pilih senjatamu!</p>
+                    <div class="rps-grid">
+                        <button class="btn-rps" onclick="playRPS('✊')">✊</button>
+                        <button class="btn-rps" onclick="playRPS('✌️')">✌️</button>
+                        <button class="btn-rps" onclick="playRPS('✋')">✋</button>
+                    </div>
+                    <div id="rpsResult" style="font-size: 14px; color: #fff; min-height: 40px; margin-top: 10px; font-weight: bold;">Pilih salah satu di atas...</div>
+                </div>
+            </div>
+
+            <div id="mathGame" class="game-box" style="display:none; width: 100%;">
+                <div class="card" style="text-align: center; margin-top: 35px;">
+                    <h3 style="color: var(--accent-green-bright); margin-bottom: 5px;">QUIZ MATEMATIKA</h3>
+                    <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 15px;">Jawab secepat mungkin!</p>
+                    <h2 id="mathQuestion" style="font-size: 32px; color: #fff; margin-bottom: 15px;">? + ?</h2>
+                    <div class="form-group">
+                        <input type="number" id="mathAnswer" placeholder="Hasil perhitungan..." style="text-align: center; font-size: 20px;">
+                    </div>
+                    <button class="btn-action" onclick="checkMathAnswer()">Kirim Jawaban</button>
+                    <p id="mathStatus" style="font-size: 12px; color: var(--accent-green-bright); margin-top: 10px; font-weight: bold;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HALAMAN SPECIAL -->
+    <div id="specialView" class="container view">
+        <div class="music-player-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span style="font-size: 13px; font-weight: bold; color: var(--accent-green-bright);">🎵 Pemutar Musik</span>
+                <span style="font-size: 11px; color: var(--text-secondary);">Audio Player</span>
+            </div>
+
+            <div class="vinyl-disc" id="vinylDisc">
+                <span style="font-size: 20px;">🎶</span>
+            </div>
+
+            <h4 id="songTitle" style="font-size: 13px; color: #fff; margin-bottom: 2px;">Belum Ada Lagu</h4>
+            <p id="songArtist" style="font-size: 10px; color: var(--text-secondary); margin-bottom: 12px;">Import lagu untuk mulai memutar</p>
+
+            <div class="music-controls">
+                <button class="btn-music-step" onclick="seekAudio(-10)">⏮</button>
+                <button class="btn-play-circle" id="btnPlayPause" onclick="togglePlayMusic()">▶</button>
+                <button class="btn-music-step" onclick="seekAudio(10)">⏭</button>
+            </div>
+
+            <div class="music-progress-container">
+                <span id="currentTimeText">0:00</span>
+                <input type="range" class="music-progress-bar" id="musicProgressBar" value="0" min="0" max="100" onchange="setAudioProgress(this.value)">
+                <span id="durationText">0:00</span>
+            </div>
+
+            <input type="file" id="audioFileInput" accept="audio/*" style="display: none;" onchange="loadAudioFile(event)">
+            <button class="btn-action" style="background: #202430; color: #fff; border: 1px solid var(--card-border);" onclick="document.getElementById('audioFileInput').click()">
+                📤 Import Lagu (MP3)
+            </button>
+
+            <audio id="mainAudioPlayer"></audio>
+        </div>
+
+        <div class="quote-card">
+            <div style="font-size: 20px; color: var(--accent-green-bright); margin-bottom: 5px;">“</div>
+            <div class="quote-arabic">حِينَ تَضِيقُ بِكَ الحَيَاةُ، تَذَكَّرْ أَنَّ اللهَ أَرْحَمُ بِكَ مِنْ كُلِّ شَيْءٍ</div>
+            <div class="quote-indo">"Ketika hidup terasa sempit, ingatlah bahwa Allah lebih menyayangimu daripada segala sesuatu."</div>
+        </div>
+
+        <div class="special-menu-grid">
+            <div class="special-menu-item" onclick="openPage('chatSystem', 'Pusat Chat')">
+                <div class="icon">💬</div>
+                <h5>Chat Room</h5>
+                <p>Chatan bersama admin</p>
+            </div>
+            <div class="special-menu-item" onclick="openPage('calculatorPage', 'Kalkulator Kas')">
+                <div class="icon">🧮</div>
+                <h5>Kalkulator</h5>
+                <p>Bantuan hitung</p>
+            </div>
+            <div class="special-menu-item" onclick="openPage('adminSenjata', 'Inventaris Senjata')">
+                <div class="icon">⚔️</div>
+                <h5>Inventaris</h5>
+                <p>Cek alat & senjata</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUB PAGES -->
+    <div id="subPageView" class="container view">
+        <button class="btn-logout" style="margin-bottom: 15px; background: var(--card-bg); border: 1px solid var(--card-border);" onclick="backToMenu()">← Kembali ke Menu</button>
+        <h3 id="pageTitle" style="margin-bottom: 15px; color: var(--accent-green-bright);"></h3>
+
+        <!-- Kalkulator Kas -->
+        <div id="pageCalculatorPage" class="sub-page" style="display:none;">
+            <div class="card">
+                <input type="text" id="calcInput" class="calc-display" readonly value="0">
+                <div class="calc-grid">
+                    <button class="btn-calc btn-calc-clear" onclick="clearCalc()">C</button>
+                    <button class="btn-calc btn-calc-operator" onclick="appendCalc('/')">÷</button>
+                    <button class="btn-calc btn-calc-operator" onclick="appendCalc('*')">×</button>
+                    <button class="btn-calc btn-calc-operator" onclick="deleteCalc()">⌫</button>
+
+                    <button class="btn-calc" onclick="appendCalc('7')">7</button>
+                    <button class="btn-calc" onclick="appendCalc('8')">8</button>
+                    <button class="btn-calc" onclick="appendCalc('9')">9</button>
+                    <button class="btn-calc btn-calc-operator" onclick="appendCalc('-')">-</button>
+
+                    <button class="btn-calc" onclick="appendCalc('4')">4</button>
+                    <button class="btn-calc" onclick="appendCalc('5')">5</button>
+                    <button class="btn-calc" onclick="appendCalc('6')">6</button>
+                    <button class="btn-calc btn-calc-operator" onclick="appendCalc('+')">+</button>
+
+                    <button class="btn-calc" onclick="appendCalc('1')">1</button>
+                    <button class="btn-calc" onclick="appendCalc('2')">2</button>
+                    <button class="btn-calc" onclick="appendCalc('3')">3</button>
+                    <button class="btn-calc btn-calc-operator" onclick="appendCalc('000')">k</button>
+
+                    <button class="btn-calc" onclick="appendCalc('0')">0</button>
+                    <button class="btn-calc" onclick="appendCalc('.')">.</button>
+                    <button class="btn-calc btn-calc-equal" onclick="computeCalc()">=</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Kas 2 Minggu -->
+        <div id="pageRekap2Minggu" class="sub-page" style="display:none;">
+            <div class="card">
+                <div class="table-responsive">
+                    <table id="kasStatusTable">
+                        <thead>
+                            <tr>
+                                <th>Nama</th>
+                                <th>H1</th><th>H2</th><th>H3</th><th>H4</th><th>H5</th><th>H6</th><th>H7</th>
+                                <th>H8</th><th>H9</th><th>H10</th><th>H11</th><th>H12</th><th>H13</th><th>H14</th>
+                                <th>Catatan</th>
+                                <th id="thAksiAdmin" style="display:none;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bayar Kas Cepat -->
+        <div id="pageBayarKas" class="sub-page" style="display:none;">
+            <div class="card">
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Pilih nominal pembayaran kas (1k = 1 Hari Kas):</p>
+                <div class="pay-grid" id="payButtonsContainer"></div>
+            </div>
+        </div>
+
+        <!-- CHAT SYSTEM DENGAN BACKGROUND PINTEREST -->
+        <div id="pageChatSystem" class="sub-page" style="display:none;">
+            <div style="margin-bottom: 10px;">
+                <label id="chatTargetLabel">Pilih Tujuan Chat:</label>
+                <select id="chatTargetSelect" onchange="loadChatMessages()"></select>
+            </div>
+            
+            <div class="chat-container-card">
+                <div class="chat-box" id="chatBox"></div>
+                <div class="chat-input-bar">
+                    <input type="text" id="chatInput" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                    <button class="btn-action" style="width: 80px; margin: 0; background: var(--accent-green-bright);" onclick="sendChatMessage()">Kirim</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventaris Senjata -->
+        <div id="pageAdminSenjata" class="sub-page" style="display:none;">
+            <div class="card" id="cardFormSenjata" style="display:none;">
+                <div class="form-group"><label>Nama Item</label><input type="text" id="gunName"></div>
+                <div class="form-group"><label>Stok</label><input type="text" id="gunStock"></div>
+                <div class="form-group"><label>Status</label><input type="text" id="gunStatus"></div>
+                <button class="btn-action" style="background: var(--accent-green-bright);" onclick="handleAddWeapon()">Simpan</button>
+            </div>
+            <div class="card">
+                <div class="table-responsive">
+                    <table id="weaponsTable">
+                        <thead>
+                            <tr><th>Item</th><th>Stok</th><th>Status</th><th id="thAksiSenjata" style="display:none;">Aksi</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Laporan Member -->
+        <div id="pageReport" class="sub-page" style="display:none;">
+            <div class="card">
+                <div class="form-group">
+                    <label>Tipe Laporan</label>
+                    <select id="reportType">
+                        <option value="Laporkan Organisasi">Laporkan Organisasi</option>
+                        <option value="Laporkan Member Lain">Laporkan Member Lain</option>
+                        <option value="Laporan Lainnya">Laporan Lainnya</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Keterangan Lengkap</label>
+                    <textarea id="reportDetail" rows="4"></textarea>
+                </div>
+                <button class="btn-action" onclick="handleReport()">Kirim Laporan</button>
+            </div>
+        </div>
+
+        <!-- Realtime Kas (Admin) -->
+        <div id="pageAdminRealtime" class="sub-page" style="display:none;">
+            <div class="card">
+                <div class="table-responsive">
+                    <table id="realtimeTable">
+                        <thead>
+                            <tr><th>Waktu</th><th>Nama</th><th>Nominal</th><th>Keterangan</th><th>Aksi</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Control (Admin) -->
+        <div id="pageAdminStats" class="sub-page" style="display:none;">
+            <div class="card">
+                <button class="btn-action" style="margin-bottom: 10px;" onclick="editExpense()">Edit Total Pengeluaran</button>
+                <button class="btn-action" style="background: var(--accent-green-bright);" onclick="editNetSaldo()">Edit Sisa Saldo Kas Global</button>
+            </div>
+        </div>
+
+        <!-- Reports View (Admin) -->
+        <div id="pageAdminReports" class="sub-page" style="display:none;">
+            <div class="card">
+                <div class="table-responsive">
+                    <table id="reportsTable">
+                        <thead>
+                            <tr><th>Pelapor</th><th>Tipe</th><th>Detail</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <div class="bottom-nav" id="bottomNav" style="display: none;">
+        <div class="nav-item active" id="navProduk" onclick="switchTab('dashboardView', 'navProduk')">
+            <span class="icon">🖼️</span>
+            <span>Produk</span>
+        </div>
+        <div class="nav-item" id="navMiniGame" onclick="switchTab('miniGamesView', 'navMiniGame'); backToGameMenu();">
+            <span class="icon">🎮</span>
+            <span>Mini Game</span>
+        </div>
+        <div class="nav-item" id="navSpecial" onclick="switchTab('specialView', 'navSpecial')">
+            <span class="icon">⚡</span>
+            <span>Special</span>
+        </div>
+        <div class="nav-item" id="navRiwayat" onclick="openPage('rekap2Minggu', 'Kas 2 Minggu')">
+            <span class="icon">💬</span>
+            <span>Riwayat</span>
+        </div>
+        <div class="nav-item" id="navInfo" onclick="openPage('chatSystem', 'Pusat Chat')">
+            <span class="icon">ℹ️</span>
+            <span>Info</span>
+        </div>
+    </div>
+
+    <button class="btn-bug" onclick="alert('Bug berhasil dilaporkan ke Developer!')">🐞 Bug Report</button>
+
+    <script>
+        // MODAL HANDLERS
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function showIdCard() {
+            if (!currentUser) return;
+            document.getElementById('cardMemberName').innerText = currentUser.name;
+            document.getElementById('cardMemberPhone').innerText = currentUser.phone || '0858...890';
+            document.getElementById('cardMemberBadge').innerText = currentUser.role.toUpperCase();
+            document.getElementById('idCardModalOverlay').classList.add('active');
+        }
+
+        function showTotalMembersModal() {
+            const tbody = document.querySelector('#allMembersTable tbody');
+            tbody.innerHTML = '';
+            users.forEach(u => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>${u.name}</b></td>
+                        <td><span class="badge badge-success">${u.role.toUpperCase()}</span></td>
+                        <td>${u.phone}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('modalTotalMemberText').innerText = `Total: ${users.length} Member`;
+            document.getElementById('membersModalOverlay').classList.add('active');
+        }
+
+        function showRoleModal() {
+            if (!currentUser) return;
+            document.getElementById('modalRoleBadge').innerText = currentUser.role.toUpperCase();
+            if (currentUser.role === 'admin') {
+                document.getElementById('modalRoleDetail').innerHTML = `
+                    <p><b>Akses Role Admin:</b></p>
+                    <ul style="margin-left:18px; margin-top:5px;">
+                        <li>Mengatur saldo kas global & pengeluaran</li>
+                        <li>Melihat riwayat pembayaran kas realtime</li>
+                        <li>Mengedit kas 2 minggu semua anggota</li>
+                        <li>Mengelola inventaris senjata organisasi</li>
+                        <li>Menerima & merespons laporan kendala</li>
+                    </ul>
+                `;
+            } else {
+                document.getElementById('modalRoleDetail').innerHTML = `
+                    <p><b>Akses Role Member:</b></p>
+                    <ul style="margin-left:18px; margin-top:5px;">
+                        <li>Melakukan pembayaran kas cepat</li>
+                        <li>Melihat status & riwayat kas pribadi</li>
+                        <li>Mengakses pusat chat bersama admin</li>
+                        <li>Memainkan mini game & fitur special</li>
+                        <li>Mengirim laporan & kendala ke admin</li>
+                    </ul>
+                `;
+            }
+            document.getElementById('roleModalOverlay').classList.add('active');
+        }
+
+        function showStreakModal() {
+            document.getElementById('streakModalOverlay').classList.add('active');
+        }
+
+        function showKasStatusModal() {
+            let member = kas2MingguData.find(m => m.name.toLowerCase() === currentUser.name.toLowerCase());
+            let paidDays = member ? member.days.filter(d => d === 1).length : 0;
+            
+            document.getElementById('modalKasStatusDetail').innerHTML = `
+                <p>Status Pembayaran: <strong style="color:var(--accent-green-bright);">LUNAS / AKTIF</strong></p>
+                <p>Total Hari Terbayar: <strong>${paidDays} / 14 Hari</strong></p>
+                <p style="margin-top:8px;">Tetap pertahankan pembayaran kas Anda untuk terus menjaga status aktif & meningkatkan Streak!</p>
+            `;
+            document.getElementById('kasStatusModalOverlay').classList.add('active');
+        }
+
+        // TEKS CASTRO & TRANSISI
+        const containerArch = document.getElementById('textArchContainer');
+
+        function generateArchText() {
+            containerArch.innerHTML = '';
+            const radius = 46;
+
+            const topText = "CASTRO";
+            const topAngles = [-50, -30, -10, 10, 30, 50];
+
+            topText.split('').forEach((char, index) => {
+                const charSpan = document.createElement('span');
+                charSpan.className = 'arch-char';
+                charSpan.innerText = char;
+                const angleRad = (topAngles[index] - 90) * (Math.PI / 180);
+                const x = radius * Math.cos(angleRad);
+                const y = radius * Math.sin(angleRad);
+                charSpan.style.transform = `translate(${x}px, ${y}px) rotate(${topAngles[index]}deg) translate(-50%, -50%)`;
+                containerArch.appendChild(charSpan);
+            });
+
+            const bottomText = "Ⅎ∀WI˥I∀";
+            const bottomAngles = [-45, -30, -15, 0, 15, 30, 45];
+
+            bottomText.split('').forEach((char, index) => {
+                const charSpan = document.createElement('span');
+                charSpan.className = 'arch-char';
+                charSpan.innerText = char;
+                const angleRad = (bottomAngles[index] + 90) * (Math.PI / 180);
+                const x = radius * Math.cos(angleRad);
+                const y = radius * Math.sin(angleRad);
+                charSpan.style.transform = `translate(${x}px, ${y}px) rotate(${bottomAngles[index]}deg) translate(-50%, -50%)`;
+                containerArch.appendChild(charSpan);
+            });
+        }
+        generateArchText();
+
+        function triggerPageTransition(callback) {
+            const overlay = document.getElementById('transitionOverlay');
+            const letters = containerArch.querySelectorAll('.arch-char');
+
+            letters.forEach(l => l.classList.remove('visible'));
+            overlay.classList.add('active');
+
+            setTimeout(() => {
+                letters.forEach((char, index) => {
+                    setTimeout(() => {
+                        char.classList.add('visible');
+                    }, index * 35);
+                });
+            }, 250);
+
+            setTimeout(() => {
+                if (callback) callback();
+            }, 850);
+
+            setTimeout(() => {
+                overlay.classList.remove('active');
+            }, 1250);
+        }
+
+        const users = [
+            { username: 'admin1', password: 'admin123', name: 'Admin 1', role: 'admin', phone: '0858...890' },
+            { username: 'member1', password: 'member123', name: 'Member 1', role: 'member', phone: '0821...222' }
+        ];
+
+        let currentUser = null;
+        let kas2MingguData = JSON.parse(localStorage.getItem('castro_kas_2minggu')) || [
+            { name: 'Member 1', days: [1,1,1,1,1,1,1, 1,1,1,1,1,1,1], note: '-' }
+        ];
+        let paymentData = JSON.parse(localStorage.getItem('castro_payments')) || [
+            { id: 1, name: 'Member 1', amount: 1000, note: 'Bayar Kas 1k', time: '12:00' }
+        ];
+        let reportsData = JSON.parse(localStorage.getItem('castro_reports')) || [];
+        let chatMessagesData = JSON.parse(localStorage.getItem('castro_chats')) || [];
+        let totalExpense = JSON.parse(localStorage.getItem('castro_expense')) || 0;
+        let customNetSaldo = JSON.parse(localStorage.getItem('castro_custom_saldo')) || null;
+        let weaponsData = JSON.parse(localStorage.getItem('castro_weapons')) || [
+            { id: 1, name: 'AK-47 / Rifle', stock: '25 Unit', status: 'Ready' }
+        ];
+        let leaderboardData = JSON.parse(localStorage.getItem('castro_leaderboard')) || [
+            { name: 'Admin 1', score: 120 },
+            { name: 'Member 1', score: 45 }
+        ];
+
+        function handleLogin() {
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
+            const found = users.find(user => user.username === u && user.password === p);
+
+            if (found) {
+                triggerPageTransition(() => {
+                    currentUser = found;
+                    document.getElementById('loginView').classList.remove('active');
+                    document.getElementById('dashboardView').classList.add('active');
+                    document.getElementById('bottomNav').style.display = 'flex';
+                    document.getElementById('btnLogout').style.display = 'block';
+
+                    document.getElementById('displayUsername').innerText = currentUser.name;
+                    document.getElementById('displayPhone').innerText = currentUser.phone || '0858...890';
+                    document.getElementById('displayRole').innerText = currentUser.role.toUpperCase();
+                    document.getElementById('displayTotalMember').innerText = users.length;
+                    document.getElementById('roleBadge').innerText = currentUser.role.toUpperCase();
+
+                    renderMenuList();
+                    updateStatsOverview();
+                    initGames();
+                });
+            } else {
+                alert('Username / Password Salah!');
+            }
+        }
+
+        function logout() {
+            triggerPageTransition(() => {
+                currentUser = null;
+                document.getElementById('loginView').classList.add('active');
+                document.getElementById('dashboardView').classList.remove('active');
+                document.getElementById('miniGamesView').classList.remove('active');
+                document.getElementById('specialView').classList.remove('active');
+                document.getElementById('subPageView').classList.remove('active');
+                document.getElementById('bottomNav').style.display = 'none';
+                document.getElementById('btnLogout').style.display = 'none';
+            });
+        }
+
+        function switchTab(viewId, navId) {
+            triggerPageTransition(() => {
+                document.querySelectorAll('.container.view').forEach(el => el.classList.remove('active'));
+                document.getElementById(viewId).classList.add('active');
+
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                document.getElementById(navId).classList.add('active');
+
+                updateStatsOverview();
+            });
+        }
+
+        function renderMenuList() {
+            const grid = document.getElementById('mainMenuGrid');
+            grid.innerHTML = '';
+            const menus = [
+                { id: 'rekap2Minggu', title: 'Kas 2 Minggu', icon: '📊' },
+                { id: 'bayarKas', title: 'Bayar Kas', icon: '💳' },
+                { id: 'adminSenjata', title: 'Inventaris Senjata', icon: '⚔️' },
+                { id: 'chatSystem', title: 'Pusat Chat', icon: '💬' }
+            ];
+
+            if (currentUser.role === 'member') {
+                menus.push({ id: 'report', title: 'Report & Kendala', icon: '⚠️' });
+            }
+
+            if (currentUser.role === 'admin') {
+                menus.push(
+                    { id: 'adminRealtime', title: 'Kas Realtime', icon: '⚡' },
+                    { id: 'adminStats', title: 'Atur Keuangan', icon: '⚙️' },
+                    { id: 'adminReports', title: 'Laporan Masuk', icon: '📩' }
+                );
+            }
+
+            menus.forEach(m => {
+                grid.innerHTML += `
+                    <div class="menu-item" onclick="openPage('${m.id}', '${m.title}')">
+                        <div class="icon">${m.icon}</div>
+                        <h4>${m.title}</h4>
+                    </div>
+                `;
+            });
+        }
+
+        function openPage(pageId, title) {
+            triggerPageTransition(() => {
+                document.querySelectorAll('.container.view').forEach(el => el.classList.remove('active'));
+                document.getElementById('subPageView').classList.add('active');
+                document.getElementById('pageTitle').innerText = title;
+                document.querySelectorAll('.sub-page').forEach(el => el.style.display = 'none');
+
+                if (pageId === 'calculatorPage') { document.getElementById('pageCalculatorPage').style.display = 'block'; }
+                if (pageId === 'rekap2Minggu') { document.getElementById('pageRekap2Minggu').style.display = 'block'; renderKas2MingguTable(); }
+                if (pageId === 'bayarKas') { document.getElementById('pageBayarKas').style.display = 'block'; renderPayButtons(); }
+                if (pageId === 'chatSystem') { document.getElementById('pageChatSystem').style.display = 'block'; setupChatView(); }
+                if (pageId === 'adminSenjata') { document.getElementById('pageAdminSenjata').style.display = 'block'; renderWeaponsTable(); }
+                if (pageId === 'report') { document.getElementById('pageReport').style.display = 'block'; }
+                if (pageId === 'adminRealtime') { document.getElementById('pageAdminRealtime').style.display = 'block'; renderRealtimeTable(); }
+                if (pageId === 'adminStats') { document.getElementById('pageAdminStats').style.display = 'block'; }
+                if (pageId === 'adminReports') { document.getElementById('pageAdminReports').style.display = 'block'; renderReportsTable(); }
+            });
+        }
+
+        function backToMenu() {
+            switchTab('dashboardView', 'navProduk');
+        }
+
+        function updateStatsOverview() {
+            if (!currentUser) return;
+            if (currentUser.role === 'admin') {
+                let totalMasuk = 0;
+                paymentData.forEach(p => totalMasuk += p.amount);
+                let netSaldo = customNetSaldo !== null ? customNetSaldo : (totalMasuk - totalExpense);
+
+                document.getElementById('labelKasBalance').innerText = 'Sisa Saldo Kas Global';
+                document.getElementById('displayNetSaldo').innerText = '$' + netSaldo;
+            } else {
+                let userPayments = paymentData.filter(p => p.name.toLowerCase() === currentUser.name.toLowerCase());
+                let totalUserPay = 0;
+                userPayments.forEach(p => totalUserPay += p.amount);
+
+                document.getElementById('labelKasBalance').innerText = 'Kas yang Sudah Saya Bayar';
+                document.getElementById('displayNetSaldo').innerText = '$' + totalUserPay;
+            }
+        }
+
+        function selectGame(gameId) {
+            triggerPageTransition(() => {
+                document.getElementById('gameMenuGridContainer').style.display = 'none';
+                
+                const arena = document.getElementById('gameArenaContainer');
+                arena.style.display = 'flex';
+                arena.classList.add('fullscreen-mode');
+                
+                document.getElementById('bottomNav').style.display = 'none';
+                document.querySelectorAll('.game-box').forEach(el => el.style.display = 'none');
+                document.getElementById(gameId).style.display = 'block';
+            });
+        }
+
+        function backToGameMenu() {
+            triggerPageTransition(() => {
+                const arena = document.getElementById('gameArenaContainer');
+                arena.style.display = 'none';
+                arena.classList.remove('fullscreen-mode');
+                
+                document.getElementById('bottomNav').style.display = 'flex';
+                document.getElementById('gameMenuGridContainer').style.display = 'block';
+            });
+        }
+
+        function initGames() {
+            renderLeaderboard();
+            initTTT();
+            generateMathQuestion();
+            initChessBoard();
+        }
+
+        /* IDLE CLICKER */
+        let userClickScore = 0;
+        function handleClicker() {
+            userClickScore++;
+            document.getElementById('clickerScore').innerText = userClickScore;
+
+            let userObj = leaderboardData.find(u => u.name === currentUser.name);
+            if (userObj) {
+                if (userClickScore > userObj.score) userObj.score = userClickScore;
+            } else {
+                leaderboardData.push({ name: currentUser.name, score: userClickScore });
+            }
+            localStorage.setItem('castro_leaderboard', JSON.stringify(leaderboardData));
+            renderLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            const tbody = document.querySelector('#leaderboardTable tbody');
+            tbody.innerHTML = '';
+            leaderboardData.sort((a, b) => b.score - a.score);
+
+            leaderboardData.forEach((item, index) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>#${index + 1}</b></td>
+                        <td>${item.name}</td>
+                        <td style="color: var(--accent-green-bright); font-weight: bold;">${item.score} Poin</td>
+                    </tr>
+                `;
+            });
+        }
+
+        /* CATUR VS AI */
+        let chessBoardState = [
+            ['♜','♞','♝','♛','♚','♝','♞','♜'],
+            ['♟','♟','♟','♟','♟','♟','♟','♟'],
+            ['','','','','','','',''],
+            ['','','','','','','',''],
+            ['','','','','','','',''],
+            ['','','','','','','',''],
+            ['♙','♙','♙','♙','♙','♙','♙','♙'],
+            ['♖','♘','♗','♕','♔','♗','♘','♖']
+        ];
+        let selectedSquare = null;
+        let isPlayerTurn = true;
+
+        const pieceValues = { '♟': -10, '♞': -30, '♝': -30, '♜': -50, '♛': -90, '♚': -900, '♙': 10, '♘': 30, '♗': 30, '♖': 50, '♕': 90, '♔': 900 };
+
+        function isWhitePiece(p) { return '♙♘♗♖♕♔'.includes(p); }
+        function isBlackPiece(p) { return '♟♞♝♜♛♚'.includes(p); }
+
+        function initChessBoard() {
+            const boardEl = document.getElementById('chessBoard');
+            boardEl.innerHTML = '';
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const isDark = (r + c) % 2 === 1;
+                    const sq = document.createElement('div');
+                    sq.className = `chess-square ${isDark ? 'dark' : 'light'}`;
+                    sq.innerText = chessBoardState[r][c];
+                    sq.onclick = () => handleChessSquareClick(r, c);
+                    boardEl.appendChild(sq);
+                }
+            }
+        }
+
+        function handleChessSquareClick(r, c) {
+            if (!isPlayerTurn) return;
+
+            if (!selectedSquare) {
+                if (chessBoardState[r][c] !== '' && isWhitePiece(chessBoardState[r][c])) {
+                    selectedSquare = { r, c };
+                    renderChessHighlight();
+                }
+            } else {
+                if (isValidChessMove(selectedSquare.r, selectedSquare.c, r, c, chessBoardState)) {
+                    chessBoardState[r][c] = chessBoardState[selectedSquare.r][selectedSquare.c];
+                    chessBoardState[selectedSquare.r][selectedSquare.c] = '';
+                    selectedSquare = null;
+                    initChessBoard();
+                    
+                    isPlayerTurn = false;
+                    document.getElementById('chessStatus').innerText = 'AI Castro sedang berpikir...';
+                    setTimeout(makeAiChessMoveElo800, 400);
+                } else {
+                    if (chessBoardState[r][c] !== '' && isWhitePiece(chessBoardState[r][c])) {
+                        selectedSquare = { r, c };
+                        renderChessHighlight();
+                    } else {
+                        selectedSquare = null;
+                        initChessBoard();
+                    }
+                }
+            }
+        }
+
+        function isValidChessMove(fr, fc, tr, tc, board) {
+            if (fr === tr && fc === tc) return false;
+            const piece = board[fr][fc];
+            const target = board[tr][tc];
+
+            if (!piece) return false;
+            if (isWhitePiece(piece) && isWhitePiece(target)) return false;
+            if (isBlackPiece(piece) && isBlackPiece(target)) return false;
+
+            const dr = tr - fr;
+            const dc = tc - fc;
+            const absDr = Math.abs(dr);
+            const absDc = Math.abs(dc);
+
+            if (piece === '♙') {
+                if (dc === 0 && dr === -1 && target === '') return true;
+                if (dc === 0 && dr === -2 && fr === 6 && target === '' && board[fr - 1][fc] === '') return true;
+                if (absDc === 1 && dr === -1 && target !== '' && isBlackPiece(target)) return true;
+                return false;
+            }
+            if (piece === '♟') {
+                if (dc === 0 && dr === 1 && target === '') return true;
+                if (dc === 0 && dr === 2 && fr === 1 && target === '' && board[fr + 1][fc] === '') return true;
+                if (absDc === 1 && dr === 1 && target !== '' && isWhitePiece(target)) return true;
+                return false;
+            }
+
+            if (piece === '♘' || piece === '♞') {
+                return (absDr === 2 && absDc === 1) || (absDr === 1 && absDc === 2);
+            }
+
+            if (!isPathClear(fr, fc, tr, tc, board)) return false;
+
+            if (piece === '♖' || piece === '♜') return fr === tr || fc === tc;
+            if (piece === '♗' || piece === '♝') return absDr === absDc;
+            if (piece === '♕' || piece === '♛') return fr === tr || fc === tc || absDr === absDc;
+            if (piece === '♔' || piece === '♚') return absDr <= 1 && absDc <= 1;
+
+            return false;
+        }
+
+        function isPathClear(fr, fc, tr, tc, board) {
+            const stepR = tr === fr ? 0 : (tr > fr ? 1 : -1);
+            const stepC = tc === fc ? 0 : (tc > fc ? 1 : -1);
+
+            let curR = fr + stepR;
+            let curC = fc + stepC;
+
+            while (curR !== tr || curC !== tc) {
+                if (board[curR][curC] !== '') return false;
+                curR += stepR;
+                curC += stepC;
+            }
+            return true;
+        }
+
+        function renderChessHighlight() {
+            initChessBoard();
+            const idx = selectedSquare.r * 8 + selectedSquare.c;
+            document.querySelectorAll('.chess-square')[idx].classList.add('selected');
+        }
+
+        function makeAiChessMoveElo800() {
+            let possibleMoves = [];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (chessBoardState[r][c] !== '' && isBlackPiece(chessBoardState[r][c])) {
+                        for (let tr = 0; tr < 8; tr++) {
+                            for (let tc = 0; tc < 8; tc++) {
+                                if (isValidChessMove(r, c, tr, tc, chessBoardState)) {
+                                    possibleMoves.push({ from: { r, c }, to: { tr, tc }, score: evaluateMove(r, c, tr, tc) });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (possibleMoves.length > 0) {
+                possibleMoves.sort((a, b) => a.score - b.score);
+                let chosen = possibleMoves[0];
+
+                chessBoardState[chosen.to.tr][chosen.to.tc] = chessBoardState[chosen.from.r][chosen.from.c];
+                chessBoardState[chosen.from.r][chosen.from.c] = '';
+            }
+
+            isPlayerTurn = true;
+            document.getElementById('chessStatus').innerText = 'Giliran Putih (Anda)';
+            initChessBoard();
+        }
+
+        function evaluateMove(fr, fc, tr, tc) {
+            let targetPiece = chessBoardState[tr][tc];
+            return targetPiece ? pieceValues[targetPiece] : 0;
+        }
+
+        function resetChessBoard() {
+            chessBoardState = [
+                ['♜','♞','♝','♛','♚','♝','♞','♜'],
+                ['♟','♟','♟','♟','♟','♟','♟','♟'],
+                ['','','','','','','',''],
+                ['','','','','','','',''],
+                ['','','','','','','',''],
+                ['','','','','','','',''],
+                ['♙','♙','♙','♙','♙','♙','♙','♙'],
+                ['♖','♘','♗','♕','♔','♗','♘','♖']
+            ];
+            selectedSquare = null;
+            isPlayerTurn = true;
+            document.getElementById('chessStatus').innerText = 'Giliran Putih (Anda)';
+            initChessBoard();
+        }
+
+        /* TIC TAC TOE VS AI */
+        let tttState = ['', '', '', '', '', '', '', '', ''];
+        let tttIsPlayerTurn = true;
+
+        function initTTT() {
+            const boardEl = document.getElementById('tttBoard');
+            boardEl.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                boardEl.innerHTML += `<div class="ttt-cell" onclick="makeTTTMove(${i})">${tttState[i]}</div>`;
+            }
+        }
+
+        function makeTTTMove(index) {
+            if (tttState[index] !== '' || !tttIsPlayerTurn) return;
+            tttState[index] = 'X';
+            initTTT();
+
+            if (checkTTTWin(tttState, 'X')) {
+                document.getElementById('tttStatus').innerText = 'Anda Menang! 🎉';
+                return;
+            }
+
+            if (tttState.every(c => c !== '')) {
+                document.getElementById('tttStatus').innerText = 'Permainan Seri!';
+                return;
+            }
+
+            tttIsPlayerTurn = false;
+            document.getElementById('tttStatus').innerText = 'AI Castro sedang melangkah...';
+            setTimeout(makeAiTTTMove, 350);
+        }
+
+        function makeAiTTTMove() {
+            let bestMove = getBestTTTMove();
+            if (bestMove !== null) {
+                tttState[bestMove] = 'O';
+            }
+            initTTT();
+
+            if (checkTTTWin(tttState, 'O')) {
+                document.getElementById('tttStatus').innerText = 'AI Castro Menang! 🤖';
+                return;
+            }
+
+            if (tttState.every(c => c !== '')) {
+                document.getElementById('tttStatus').innerText = 'Permainan Seri!';
+                return;
+            }
+
+            tttIsPlayerTurn = true;
+            document.getElementById('tttStatus').innerText = 'Giliran Anda (X)';
+        }
+
+        function getBestTTTMove() {
+            const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            for (let w of wins) {
+                let counts = w.map(i => tttState[i]);
+                if (counts.filter(c => c === 'O').length === 2 && counts.filter(c => c === '').length === 1) {
+                    return w[counts.indexOf('')];
+                }
+            }
+            for (let w of wins) {
+                let counts = w.map(i => tttState[i]);
+                if (counts.filter(c => c === 'X').length === 2 && counts.filter(c => c === '').length === 1) {
+                    return w[counts.indexOf('')];
+                }
+            }
+            let emptyIndices = tttState.map((val, idx) => val === '' ? idx : null).filter(val => val !== null);
+            return emptyIndices.length > 0 ? emptyIndices[Math.floor(Math.random() * emptyIndices.length)] : null;
+        }
+
+        function checkTTTWin(board, player) {
+            const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            return wins.some(w => board[w[0]] === player && board[w[1]] === player && board[w[2]] === player);
+        }
+
+        function resetTTT() {
+            tttState = ['', '', '', '', '', '', '', '', ''];
+            tttIsPlayerTurn = true;
+            document.getElementById('tttStatus').innerText = 'Giliran Anda (X)';
+            initTTT();
+        }
+
+        /* GUNTING BATU KERTAS */
+        function playRPS(userChoice) {
+            const choices = ['✊', '✌️', '✋'];
+            const botChoice = choices[Math.floor(Math.random() * choices.length)];
+            let res = '';
+
+            if (userChoice === botChoice) {
+                res = `Seri! Kamu & Bot memilih ${userChoice}`;
+            } else if (
+                (userChoice === '✊' && botChoice === '✌️') ||
+                (userChoice === '✌️' && botChoice === '✋') ||
+                (userChoice === '✋' && botChoice === '✊')
+            ) {
+                res = `Kamu Menang! 🎉 (${userChoice} lawan ${botChoice})`;
+            } else {
+                res = `Kamu Kalah! 😢 (${userChoice} lawan ${botChoice})`;
+            }
+            document.getElementById('rpsResult').innerText = res;
+        }
+
+        /* MATH QUIZ */
+        let num1, num2, correctAns;
+        function generateMathQuestion() {
+            num1 = Math.floor(Math.random() * 20) + 1;
+            num2 = Math.floor(Math.random() * 20) + 1;
+            correctAns = num1 + num2;
+            document.getElementById('mathQuestion').innerText = `${num1} + ${num2}`;
+            document.getElementById('mathAnswer').value = '';
+        }
+
+        function checkMathAnswer() {
+            const ans = parseInt(document.getElementById('mathAnswer').value);
+            if (ans === correctAns) {
+                document.getElementById('mathStatus').innerText = 'Benar! 🎉 (+1 Poin)';
+                handleClicker();
+                setTimeout(() => {
+                    document.getElementById('mathStatus').innerText = '';
+                    generateMathQuestion();
+                }, 1000);
+            } else {
+                document.getElementById('mathStatus').innerText = 'Salah, Coba lagi!';
+            }
+        }
+
+        /* KALKULATOR */
+        let calcDisplay = document.getElementById('calcInput');
+
+        function appendCalc(val) {
+            if (calcDisplay.value === '0' && val !== '.') {
+                calcDisplay.value = val;
+            } else {
+                calcDisplay.value += val;
+            }
+        }
+
+        function clearCalc() { calcDisplay.value = '0'; }
+
+        function deleteCalc() {
+            if (calcDisplay.value.length > 1) {
+                calcDisplay.value = calcDisplay.value.slice(0, -1);
+            } else {
+                calcDisplay.value = '0';
+            }
+        }
+
+        function computeCalc() {
+            try {
+                let expression = calcDisplay.value;
+                calcDisplay.value = eval(expression);
+            } catch (e) {
+                calcDisplay.value = 'Error';
+                setTimeout(clearCalc, 1200);
+            }
+        }
+
+        /* PEMUTAR MUSIK */
+        const audio = document.getElementById('mainAudioPlayer');
+        const playBtn = document.getElementById('btnPlayPause');
+        const disc = document.getElementById('vinylDisc');
+        const progressBar = document.getElementById('musicProgressBar');
+        const currentTimeText = document.getElementById('currentTimeText');
+        const durationText = document.getElementById('durationText');
+
+        function loadAudioFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                audio.src = url;
+                document.getElementById('songTitle').innerText = file.name.replace(/\.[^/.]+$/, "");
+                document.getElementById('songArtist').innerText = "File Lokal HP";
+                playMusic();
+            }
+        }
+
+        function togglePlayMusic() {
+            if (!audio.src) {
+                alert("Harap klik 'Import Lagu (MP3)' untuk memilih lagu dari HP terlebih dahulu!");
+                return;
+            }
+            if (audio.paused) { playMusic(); } else { pauseMusic(); }
+        }
+
+        function playMusic() { audio.play(); playBtn.innerText = "⏸"; disc.classList.add('spinning'); }
+        function pauseMusic() { audio.pause(); playBtn.innerText = "▶"; disc.classList.remove('spinning'); }
+        function seekAudio(s) { if (audio.src) audio.currentTime += s; }
+        function setAudioProgress(val) { if (audio.duration) audio.currentTime = (val / 100) * audio.duration; }
+
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+                progressBar.value = (audio.currentTime / audio.duration) * 100;
+                currentTimeText.innerText = formatAudioTime(audio.currentTime);
+                durationText.innerText = formatAudioTime(audio.duration);
+            }
+        });
+
+        audio.addEventListener('ended', () => { pauseMusic(); progressBar.value = 0; });
+
+        function formatAudioTime(sec) {
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function renderKas2MingguTable() {
+            const tbody = document.querySelector('#kasStatusTable tbody');
+            const isAdmin = currentUser.role === 'admin';
+            document.getElementById('thAksiAdmin').style.display = isAdmin ? 'table-cell' : 'none';
+            tbody.innerHTML = '';
+
+            kas2MingguData.forEach((row, rowIndex) => {
+                let daysHTML = '';
+                row.days.forEach(s => {
+                    daysHTML += `<td><span class="badge ${s===1?'badge-success':'badge-danger'}">${s===1?'✓':'✗'}</span></td>`;
+                });
+                let aksi = isAdmin ? `<td><button class="btn-logout" onclick="editMemberKas(${rowIndex})">Edit</button></td>` : '';
+                tbody.innerHTML += `<tr><td><b>${row.name}</b></td>${daysHTML}<td>${row.note}</td>${aksi}</tr>`;
+            });
+        }
+
+        function editMemberKas(index) {
+            if (currentUser.role !== 'admin') return;
+            const member = kas2MingguData[index];
+            const dayNum = prompt(`Ubah status hari (1-14) untuk ${member.name}:`);
+            if (!dayNum || dayNum < 1 || dayNum > 14) return;
+
+            const idx = parseInt(dayNum) - 1;
+            member.days[idx] = member.days[idx] === 1 ? 0 : 1;
+            localStorage.setItem('castro_kas_2minggu', JSON.stringify(kas2MingguData));
+            renderKas2MingguTable();
+        }
+
+        function renderPayButtons() {
+            const container = document.getElementById('payButtonsContainer');
+            container.innerHTML = '';
+            for (let i = 1; i <= 14; i++) {
+                container.innerHTML += `<button class="btn-pay" onclick="processFastPayment(${i})">${i}k</button>`;
+            }
+        }
+
+        function processFastPayment(kAmount) {
+            let member = kas2MingguData.find(m => m.name.toLowerCase() === currentUser.name.toLowerCase());
+            if (!member) {
+                member = { name: currentUser.name, days: [0,0,0,0,0,0,0, 0,0,0,0,0,0,0], note: '-' };
+                kas2MingguData.push(member);
+            }
+
+            let daysUpdated = 0;
+            for (let i = 0; i < member.days.length; i++) {
+                if (member.days[i] === 0) {
+                    member.days[i] = 1;
+                    daysUpdated++;
+                    if (daysUpdated === kAmount) break;
+                }
+            }
+
+            localStorage.setItem('castro_kas_2minggu', JSON.stringify(kas2MingguData));
+            paymentData.unshift({ id: Date.now(), name: currentUser.name, amount: kAmount * 1000, note: `Bayar Kas ${kAmount}k`, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
+            localStorage.setItem('castro_payments', JSON.stringify(paymentData));
+            alert(`Berhasil membayar $${kAmount}k!`);
+            backToMenu();
+        }
+
+        function setupChatView() {
+            const select = document.getElementById('chatTargetSelect');
+            select.innerHTML = '';
+            if (currentUser.role === 'member') {
+                users.filter(u => u.role === 'admin').forEach((adm, idx) => {
+                    select.innerHTML += `<option value="${adm.username}">Admin ${idx + 1}</option>`;
+                });
+            } else {
+                users.filter(u => u.role === 'member').forEach(m => {
+                    select.innerHTML += `<option value="${m.username}">${m.name}</option>`;
+                });
+            }
+            loadChatMessages();
+        }
+
+        function loadChatMessages() {
+            const target = document.getElementById('chatTargetSelect').value;
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML = '';
+            if (!target) return;
+
+            const filtered = chatMessagesData.filter(c => 
+                (c.sender === currentUser.username && c.receiver === target) ||
+                (c.sender === target && c.receiver === currentUser.username)
+            );
+
+            if (filtered.length === 0) {
+                chatBox.innerHTML = `
+                    <div class="chat-empty-state">
+                        <div class="chat-empty-icon">💬</div>
+                        <h5>BELUM ADA PESAN. MULAI CHAT!</h5>
+                        <p>${currentUser.name.toUpperCase()} TERHUBUNG</p>
+                    </div>
+                `;
+            } else {
+                filtered.forEach(c => {
+                    const isMe = c.sender === currentUser.username;
+                    chatBox.innerHTML += `<div class="chat-bubble ${isMe ? 'chat-me' : 'chat-other'}">${c.message}</div>`;
+                });
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const target = document.getElementById('chatTargetSelect').value;
+            if (!input.value.trim() || !target) return;
+
+            chatMessagesData.push({ sender: currentUser.username, receiver: target, message: input.value.trim() });
+            localStorage.setItem('castro_chats', JSON.stringify(chatMessagesData));
+            input.value = '';
+            loadChatMessages();
+        }
+
+        function renderWeaponsTable() {
+            const isAdmin = currentUser.role === 'admin';
+            document.getElementById('cardFormSenjata').style.display = isAdmin ? 'block' : 'none';
+            document.getElementById('thAksiSenjata').style.display = isAdmin ? 'table-cell' : 'none';
+            const tbody = document.querySelector('#weaponsTable tbody');
+            tbody.innerHTML = '';
+
+            weaponsData.forEach(w => {
+                let aksi = isAdmin ? `<td><button class="btn-logout" style="background:var(--accent-green-bright); color:#000;" onclick="deleteWeapon(${w.id})">Hapus</button></td>` : '';
+                tbody.innerHTML += `<tr><td>${w.name}</td><td>${w.stock}</td><td><span class="badge badge-success">${w.status}</span></td>${aksi}</tr>`;
+            });
+        }
+
+        function handleAddWeapon() {
+            const name = document.getElementById('gunName').value.trim();
+            const stock = document.getElementById('gunStock').value.trim();
+            const status = document.getElementById('gunStatus').value.trim();
+            if (!name || !stock) return;
+            weaponsData.push({ id: Date.now(), name, stock, status });
+            localStorage.setItem('castro_weapons', JSON.stringify(weaponsData));
+            renderWeaponsTable();
+        }
+
+        function deleteWeapon(id) {
+            weaponsData = weaponsData.filter(w => w.id !== id);
+            localStorage.setItem('castro_weapons', JSON.stringify(weaponsData));
+            renderWeaponsTable();
+        }
+
+        function renderRealtimeTable() {
+            const tbody = document.querySelector('#realtimeTable tbody');
+            tbody.innerHTML = '';
+            paymentData.forEach((p, index) => {
+                tbody.innerHTML += `<tr><td>${p.time}</td><td>${p.name}</td><td>$${p.amount}</td><td>${p.note}</td><td><button class="btn-logout" style="background:var(--accent-green-bright); color:#000;" onclick="deleteRealtime(${index})">Hapus</button></td></tr>`;
+            });
+        }
+
+        function deleteRealtime(index) {
+            paymentData.splice(index, 1);
+            localStorage.setItem('castro_payments', JSON.stringify(paymentData));
+            renderRealtimeTable();
+            updateStatsOverview();
+        }
+
+        function renderReportsTable() {
+            const tbody = document.querySelector('#reportsTable tbody');
+            tbody.innerHTML = '';
+            reportsData.forEach(r => {
+                tbody.innerHTML += `<tr><td>${r.reporter}</td><td>${r.type}</td><td>${r.detail}</td></tr>`;
+            });
+        }
+
+        function handleReport() {
+            const type = document.getElementById('reportType').value;
+            const detail = document.getElementById('reportDetail').value.trim();
+            if (!detail) return;
+            reportsData.unshift({ reporter: currentUser.name, type, detail });
+            localStorage.setItem('castro_reports', JSON.stringify(reportsData));
+            alert('Laporan Terkirim!');
+            backToMenu();
+        }
+
+        function editExpense() {
+            const val = prompt("Masukkan total pengeluaran baru:", totalExpense);
+            if (val !== null) {
+                totalExpense = parseInt(val) || 0;
+                localStorage.setItem('castro_expense', JSON.stringify(totalExpense));
+                customNetSaldo = null;
+                localStorage.removeItem('castro_custom_saldo');
+                updateStatsOverview();
+            }
+        }
+
+        function editNetSaldo() {
+            const val = prompt("Masukkan sisa saldo kas global baru:", document.getElementById('displayNetSaldo').innerText.replace('$',''));
+            if (val !== null) {
+                customNetSaldo = parseInt(val) || 0;
+                localStorage.setItem('castro_custom_saldo', JSON.stringify(customNetSaldo));
+                updateStatsOverview();
+            }
+        }
+    </script>
+</body>
+</html>
